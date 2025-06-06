@@ -5,6 +5,8 @@ from foodgram.constants import (AMOUNT_MAX, AMOUNT_MIN, COOKING_MAX_TIME,
                                 COOKING_MIN_TIME, INGREDIENT_MAX_LENGHT,
                                 RECIPE_NAME_MAX_LENGHT, TAG_MAX_LENGHT)
 from users.models import CustomUser
+from hashids import Hashids
+from django.conf import settings
 
 
 class Tag(models.Model):
@@ -17,7 +19,7 @@ class Tag(models.Model):
     )
     color = ColorField(
         default='#FF0000',
-        unique=True,
+        unique=False,
         verbose_name='Цвет'
     )
     slug = models.SlugField(
@@ -112,6 +114,11 @@ class Recipe(models.Model):
         auto_now_add=True,
         verbose_name='Время публикации'
     )
+
+    @property
+    def short_hash(self):
+        hashids = Hashids(salt=settings.SECRET_KEY, min_length=3)
+        return hashids.encode(self.id)
 
     class Meta:
         verbose_name = 'Рецепт'

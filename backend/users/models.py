@@ -18,6 +18,12 @@ class CustomUser(AbstractUser):
         max_length=EMAIL_MAX_LENGTH,
         verbose_name='Электронная почта'
     )
+    avatar = models.ImageField(
+        upload_to='avatars/',
+        null=True,
+        blank=True,
+        verbose_name='Аватар'
+    )
 
     USERNAME_FIELD = 'email'
     REQUIRED_FIELDS = ['password', 'username', 'first_name', 'last_name']
