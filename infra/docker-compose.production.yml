@@ -8,7 +8,10 @@ volumes:
 services:
   db:
     image: postgres:13.10
-    env_file: .env
+    environment:
+      - POSTGRES_USER=foodgram_user
+      - POSTGRES_PASSWORD=foodgram_password
+      - POSTGRES_DB=foodgram
     volumes:
       - pg_database:/var/lib/postgresql/data
     restart: always
@@ -35,7 +38,7 @@ services:
   nginx:
     image: nginx:1.19.3-alpine
     ports:
-      - "8000:80"
+      - "8100:80"
     volumes:
       - ./nginx.conf:/etc/nginx/conf.d/default.conf
       - ./docs/:/usr/share/nginx/html/api/docs/
