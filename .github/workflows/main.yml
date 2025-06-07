@@ -91,6 +91,7 @@ jobs:
     needs:
       - build_and_push_to_docker_hub
       - build_frontend_and_push_to_docker_hub
+    if: github.ref == 'refs/heads/main'  # Добавлено как в Kittygram
     steps:
       - name: Checkout repo
         uses: actions/checkout@v3
@@ -101,7 +102,6 @@ jobs:
           host: ${{ secrets.HOST }}
           username: ${{ secrets.USER }}
           key: ${{ secrets.SSH_KEY }}
-          passphrase: ${{ secrets.SSH_PASSPHRASE }}
           source: "infra/*"
           target: "${{ secrets.PROJECT_NAME }}/"
 
@@ -111,7 +111,6 @@ jobs:
           host: ${{ secrets.HOST }}
           username: ${{ secrets.USER }}
           key: ${{ secrets.SSH_KEY }}
-          passphrase: ${{ secrets.SSH_PASSPHRASE }}
           script: |
             cd ${{ secrets.PROJECT_NAME }}
             sudo docker compose -f docker-compose.production.yml pull
@@ -124,6 +123,7 @@ jobs:
   notify:
     runs-on: ubuntu-latest
     needs: deploy
+    if: success()  # Добавлено как в Kittygram
     steps:
       - name: Send success message
         uses: appleboy/telegram-action@master
@@ -132,4 +132,5 @@ jobs:
           token: ${{ secrets.TELEGRAM_TOKEN }}
           message: |
             ✅ Деплой Foodgram успешно выполнен!
-            Изменения: https://github.com/${{ github.repository }}/commit/${{ github.sha }}
+            📝 Коммит: ${{ github.event.head_commit.message }}
+            🔍 Подробности: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
