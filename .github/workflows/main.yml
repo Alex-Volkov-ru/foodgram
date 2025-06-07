@@ -95,24 +95,24 @@ jobs:
       - name: Checkout repo
         uses: actions/checkout@v3
 
-      - name: Setup SSH
-        uses: webfactory/ssh-agent@v0.7.0
-        with:
-          ssh-private-key: ${{ secrets.SSH_KEY }}
-
-      - name: Test SSH connection
-        run: |
-          ssh -o StrictHostKeyChecking=no ${{ secrets.USER }}@${{ secrets.HOST }} "echo 'SSH connection successful!'"
-
       - name: Copy files via SCP
-        run: |
-          scp -o StrictHostKeyChecking=no -r docs/ ${{ secrets.USER }}@${{ secrets.HOST }}:${{ secrets.PROJECT_NAME }}/
-          scp -o StrictHostKeyChecking=no infra/nginx.conf ${{ secrets.USER }}@${{ secrets.HOST }}:${{ secrets.PROJECT_NAME }}/
-          scp -o StrictHostKeyChecking=no infra/docker-compose.production.yml ${{ secrets.USER }}@${{ secrets.HOST }}:${{ secrets.PROJECT_NAME }}/
+        uses: appleboy/scp-action@master
+        with:
+          host: ${{ secrets.HOST }}
+          username: ${{ secrets.USER }}
+          key: ${{ secrets.SSH_KEY }}
+          passphrase: ${{ secrets.SSH_PASSPHRASE | default('') }}
+          source: "infra/*"
+          target: "${{ secrets.PROJECT_NAME }}/"
 
       - name: Execute remote commands
-        run: |
-          ssh -o StrictHostKeyChecking=no ${{ secrets.USER }}@${{ secrets.HOST }} "
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.HOST }}
+          username: ${{ secrets.USER }}
+          key: ${{ secrets.SSH_KEY }}
+          passphrase: ${{ secrets.SSH_PASSPHRASE | default('') }}
+          script: |
             cd ${{ secrets.PROJECT_NAME }}
             sudo docker compose -f docker-compose.production.yml pull
             sudo docker compose -f docker-compose.production.yml down
@@ -120,21 +120,8 @@ jobs:
             sudo docker compose -f docker-compose.production.yml exec backend python manage.py migrate
             sudo docker compose -f docker-compose.production.yml exec backend python manage.py collectstatic --no-input
             sudo docker compose -f docker-compose.production.yml exec backend cp -r /app/collected_static/. /backend_static/static/
-          "
 
-      - name: Send message if deploy failed
-        if: ${{ failure() }}
-        uses: appleboy/telegram-action@master
-        with:
-          to: ${{ secrets.TELEGRAM_CHAT_ID }}
-          token: ${{ secrets.TELEGRAM_TOKEN }}
-          disable_web_page_preview: true
-          format: html
-          message: |
-            Ошибка деплая <code>${{ secrets.PROJECT_NAME }}</code>: ${{ github.repository }}
-            <a href="https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}">Подробности</a>
-
-  send_message:
+  notify:
     runs-on: ubuntu-latest
     needs: deploy
     steps:
