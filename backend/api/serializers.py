@@ -2,11 +2,10 @@ import base64
 import uuid
 
 from django.core.files.base import ContentFile
-from rest_framework import serializers
-from rest_framework.exceptions import ValidationError
-
 from recipes.models import (Favorite, Ingredient, Recipe, RecipeIngredient,
                             ShoppingCart, Tag)
+from rest_framework import serializers
+from rest_framework.exceptions import ValidationError
 from users.models import CustomUser, Follow
 
 
