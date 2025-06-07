@@ -1,4 +1,5 @@
 from django.contrib import admin
+
 from foodgram.constants import MIN_VALUE
 
 from .models import (Favorite, Ingredient, Recipe, RecipeIngredient,

@@ -1,12 +1,13 @@
 from colorfield.fields import ColorField
+from django.conf import settings
 from django.core.validators import MaxValueValidator, MinValueValidator
 from django.db import models
+from hashids import Hashids
+
 from foodgram.constants import (AMOUNT_MAX, AMOUNT_MIN, COOKING_MAX_TIME,
                                 COOKING_MIN_TIME, INGREDIENT_MAX_LENGHT,
                                 RECIPE_NAME_MAX_LENGHT, TAG_MAX_LENGHT)
 from users.models import CustomUser
-from hashids import Hashids
-from django.conf import settings
 
 
 class Tag(models.Model):
