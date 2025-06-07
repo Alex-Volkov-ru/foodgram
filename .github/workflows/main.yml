@@ -3,7 +3,7 @@ name: Main Foodgram workflow
 on:
   push:
     branches:
-      - main
+      - main   # Деплой только из main ветки
 
 jobs:
   tests:
@@ -20,8 +20,7 @@ jobs:
         options: --health-cmd pg_isready --health-interval 10s --health-timeout 5s --health-retries 5
 
     steps:
-    - name: Check out code
-      uses: actions/checkout@v3
+    - uses: actions/checkout@v3
 
     - name: Set up Python
       uses: actions/setup-python@v4
@@ -34,7 +33,7 @@ jobs:
         pip install flake8==6.0.0 flake8-isort==6.0.0
         pip install -r ./backend/requirements.txt
 
-    - name: Test with flake8
+    - name: Test with flake8 and Django tests
       env:
         POSTGRES_USER: foodgram_user
         POSTGRES_PASSWORD: foodgram_password
@@ -43,23 +42,21 @@ jobs:
         DB_PORT: 5432
       run: |
         python -m flake8 backend
+        cd backend/
+        python manage.py test
 
   build_and_push_to_docker_hub:
-    name: Push Docker image to DockerHub
+    name: Push backend Docker image to DockerHub
     runs-on: ubuntu-latest
     needs: tests
     steps:
-      - name: Check out the repo
-        uses: actions/checkout@v3
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v2
-      - name: Login to Docker
-        uses: docker/login-action@v2
+      - uses: actions/checkout@v3
+      - uses: docker/setup-buildx-action@v2
+      - uses: docker/login-action@v2
         with:
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
-      - name: Push to DockerHub
-        uses: docker/build-push-action@v4
+      - uses: docker/build-push-action@v4
         with:
           context: ./backend/
           push: true
@@ -70,17 +67,13 @@ jobs:
     runs-on: ubuntu-latest
     needs: tests
     steps:
-      - name: Check out the repo
-        uses: actions/checkout@v3
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v2
-      - name: Login to Docker
-        uses: docker/login-action@v2
+      - uses: actions/checkout@v3
+      - uses: docker/setup-buildx-action@v2
+      - uses: docker/login-action@v2
         with:
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
-      - name: Push to DockerHub
-        uses: docker/build-push-action@v4
+      - uses: docker/build-push-action@v4
         with:
           context: ./frontend/
           push: true
@@ -91,26 +84,27 @@ jobs:
     needs:
       - build_and_push_to_docker_hub
       - build_frontend_and_push_to_docker_hub
-    if: github.ref == 'refs/heads/main'  # Добавлено как в Kittygram
+    if: github.ref == 'refs/heads/main'
     steps:
-      - name: Checkout repo
-        uses: actions/checkout@v3
+      - uses: actions/checkout@v3
 
-      - name: Copy files via SCP
+      - name: Copy infra files via SCP
         uses: appleboy/scp-action@master
         with:
           host: ${{ secrets.HOST }}
           username: ${{ secrets.USER }}
           key: ${{ secrets.SSH_KEY }}
+          passphrase: ${{ secrets.SSH_PASSPHRASE }}
           source: "infra/*"
           target: "${{ secrets.PROJECT_NAME }}/"
 
-      - name: Execute remote commands
+      - name: Execute remote deploy commands via SSH
         uses: appleboy/ssh-action@master
         with:
           host: ${{ secrets.HOST }}
           username: ${{ secrets.USER }}
           key: ${{ secrets.SSH_KEY }}
+          passphrase: ${{ secrets.SSH_PASSPHRASE }}
           script: |
             cd ${{ secrets.PROJECT_NAME }}
             sudo docker compose -f docker-compose.production.yml pull
@@ -123,14 +117,13 @@ jobs:
   notify:
     runs-on: ubuntu-latest
     needs: deploy
-    if: success()  # Добавлено как в Kittygram
+    if: success()
     steps:
-      - name: Send success message
+      - name: Send success message to Telegram
         uses: appleboy/telegram-action@master
         with:
           to: ${{ secrets.TELEGRAM_CHAT_ID }}
           token: ${{ secrets.TELEGRAM_TOKEN }}
           message: |
             ✅ Деплой Foodgram успешно выполнен!
-            📝 Коммит: ${{ github.event.head_commit.message }}
-            🔍 Подробности: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+            Изменения: https://github.com/${{ github.repository }}/commit/${{ github.sha }}
