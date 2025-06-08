@@ -1,6 +1,6 @@
 from django.conf import settings
 from django.db.models import Sum
-from django.http import HttpResponse, Http404
+from django.http import Http404, HttpResponse
 from django.shortcuts import get_object_or_404, redirect
 from django_filters.rest_framework import DjangoFilterBackend
 from djoser.views import UserViewSet
