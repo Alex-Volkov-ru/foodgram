@@ -18,3 +18,4 @@ pytest-django==4.4.0
 pytest-pythonpath==0.7.3
 PyYAML==6.0
 hashids
+drf-spectacular==0.27.2
