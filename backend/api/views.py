@@ -199,7 +199,7 @@ class RecipeViewSet(viewsets.ModelViewSet):
             f' - {ingredient["amount"]}'
             for ingredient in ingredients
         ])
-        shopping_list += '\n\nFoodgram num1718.'
+        shopping_list += '\n\nFoodgram ximikat01.'
         filename = f'{user.username}_shopping_cart.txt'
         response = HttpResponse(shopping_list, content_type='text/plain')
         response['Content-Disposition'] = f'attachment; filename={filename}'
