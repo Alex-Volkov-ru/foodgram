@@ -1,8 +1,7 @@
 from django.conf import settings
 from django.db.models import Sum
-from django.http import HttpResponse
-from django.shortcuts import get_object_or_404
-from django.views.generic.base import RedirectView
+from django.http import HttpResponse, Http404
+from django.shortcuts import get_object_or_404, redirect
 from django_filters.rest_framework import DjangoFilterBackend
 from djoser.views import UserViewSet
 from hashids import Hashids
@@ -26,19 +25,15 @@ from .serializers import (CustomUserListRetrieveSerializer, FavoriteSerializer,
 
 
 def recipe_redirect(request, short_hash):
-    """Редирект на рецепт по короткому hash-id."""
     hashids = Hashids(salt=settings.SECRET_KEY, min_length=3)
     try:
         decoded = hashids.decode(short_hash)
         if not decoded:
             raise ValueError("Invalid hash")
         pk = decoded[0]
-        return RedirectView.as_view(url=f'/api/recipes/{pk}/')(request)
+        return redirect(f'/recipes/{pk}')
     except (ValueError, IndexError):
-        return Response(
-            {"detail": "Рецепт не найден"},
-            status=status.HTTP_404_NOT_FOUND
-        )
+        raise Http404("Рецепт не найден")
 
 
 class CustomUserViewSet(UserViewSet):
