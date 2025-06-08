@@ -48,8 +48,7 @@ class CustomUserListRetrieveSerializer(serializers.ModelSerializer):
         """Проверяет подписку текущего пользователя на просматриваемого."""
         user = self.context.get('request').user
         return bool(
-            self.context.get('reques')
-            and user.is_authenticated
+            user.is_authenticated
             and Follow.objects.filter(
                 user=user,
                 following=obj
