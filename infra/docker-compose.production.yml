@@ -1,4 +1,4 @@
-version: '3.3'
+version: '3.8'
 
 volumes:
   pg_database:
@@ -29,11 +29,10 @@ services:
 
   frontend:
     image: ximikat01/foodgram_frontend:latest
-    command: sh -c "cp -r /app/build/. /static/ && chmod -R 755 /static"
+    command: sh -c "cp -r /app/build/. /usr/share/nginx/html/ && chmod -R 755 /usr/share/nginx/html"
     volumes:
-      - static:/static
+      - static:/usr/share/nginx/html
     depends_on:
-      - db
       - backend
 
   nginx:
@@ -48,5 +47,5 @@ services:
       - media:/usr/share/nginx/html/media
       - /etc/letsencrypt:/etc/letsencrypt:ro
     depends_on:
-      - backend
+      - frontend
     restart: always
