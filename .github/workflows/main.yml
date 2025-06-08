@@ -3,7 +3,7 @@ name: Main Foodgram workflow
 on:
   push:
     branches:
-      - main   # Деплой только из main ветки
+      - main
 
 jobs:
   tests:
@@ -106,7 +106,7 @@ jobs:
           key: ${{ secrets.SSH_KEY }}
           # passphrase: ${{ secrets.SSH_PASSPHRASE }}
           script: |
-            cd ${{ secrets.PROJECT_NAME }}
+            cd ${{ secrets.PROJECT_NAME }}/infra
             sudo docker compose -f docker-compose.production.yml pull
             sudo docker compose -f docker-compose.production.yml down
             sudo docker compose -f docker-compose.production.yml up -d
