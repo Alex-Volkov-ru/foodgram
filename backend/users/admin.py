@@ -2,7 +2,7 @@ from django.contrib import admin
 from django.contrib.auth.models import Group
 from rest_framework.authtoken.models import TokenProxy
 
-from .models import User, Follow
+from .models import Follow, User
 
 
 @admin.register(User)

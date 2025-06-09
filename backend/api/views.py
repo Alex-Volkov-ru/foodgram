@@ -12,16 +12,16 @@ from rest_framework.decorators import action
 from rest_framework.pagination import LimitOffsetPagination
 from rest_framework.permissions import SAFE_METHODS, AllowAny, IsAuthenticated
 from rest_framework.response import Response
-from users.models import User, Follow
+from users.models import Follow, User
 
 from .filters import IngredientSearchFilter, RecipesFilter
 from .pagination import RecipePagination
 from .permissions import IsAuthorOrReadOnly
-from .serializers import (UserListRetrieveSerializer, FavoriteSerializer,
-                          FollowGetSerializer, FollowSerializer,
-                          IngredientSerializer, RecipeSerializer,
-                          RecipeUpdateSerializer, ShoppingCartSerializer,
-                          TagSerializer)
+from .serializers import (FavoriteSerializer, FollowGetSerializer,
+                          FollowSerializer, IngredientSerializer,
+                          RecipeSerializer, RecipeUpdateSerializer,
+                          ShoppingCartSerializer, TagSerializer,
+                          UserListRetrieveSerializer)
 
 
 def recipe_redirect(request, short_hash):

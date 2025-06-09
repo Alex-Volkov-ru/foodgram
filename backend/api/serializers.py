@@ -6,7 +6,7 @@ from recipes.models import (Favorite, Ingredient, Recipe, RecipeIngredient,
                             ShoppingCart, Tag)
 from rest_framework import serializers
 from rest_framework.exceptions import ValidationError
-from users.models import User, Follow
+from users.models import Follow, User
 
 
 class Base64ImageField(serializers.ImageField):
