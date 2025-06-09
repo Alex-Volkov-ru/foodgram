@@ -1,5 +1,5 @@
 from django.core.management.base import BaseCommand
-from users.models import CustomUser
+from users.models import User
 
 
 class Command(BaseCommand):
@@ -42,8 +42,8 @@ class Command(BaseCommand):
         password = 'qweasdzxc'
 
         for data in test_users:
-            if not CustomUser.objects.filter(email=data['email']).exists():
-                user = CustomUser.objects.create_user(
+            if not User.objects.filter(email=data['email']).exists():
+                user = User.objects.create_user(
                     email=data['email'],
                     username=data['username'],
                     first_name=data['first_name'],

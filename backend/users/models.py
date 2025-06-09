@@ -1,11 +1,12 @@
 from django.contrib.auth.models import AbstractUser
 from django.db import models
+from django.core.exceptions import ValidationError
 
 from foodgram.constants import EMAIL_MAX_LENGTH, USER_FIELDS_MAX_LENGTH
 
 
-class CustomUser(AbstractUser):
-    """Кастомная модель пользователя с email в качестве USERNAME_FIELD."""
+class User(AbstractUser):
+    """Модель пользователя с email в качестве USERNAME_FIELD."""
     first_name = models.CharField(
         max_length=USER_FIELDS_MAX_LENGTH,
         verbose_name='Имя'
@@ -23,6 +24,7 @@ class CustomUser(AbstractUser):
         upload_to='avatars/',
         null=True,
         blank=True,
+        default='',
         verbose_name='Аватар'
     )
 
@@ -40,12 +42,12 @@ class CustomUser(AbstractUser):
 class Follow(models.Model):
     """Модель подписки пользователей."""
     user = models.ForeignKey(
-        CustomUser,
+        User,
         on_delete=models.CASCADE,
         related_name='followed'
     )
-    following = models. ForeignKey(
-        CustomUser,
+    following = models.ForeignKey(
+        User,
         on_delete=models.CASCADE,
         related_name='follows',
     )
@@ -57,3 +59,16 @@ class Follow(models.Model):
                 name='unique_pair'
             )
         ]
+
+    def clean(self):
+        if self.user == self.following:
+            raise ValidationError(
+                "Пользователь не может подписаться на самого себя")
+        return super().clean()
+
+    def save(self, *args, **kwargs):
+        self.full_clean()
+        return super().save(*args, **kwargs)
+
+    def __str__(self):
+        return f'{self.user} подписан на {self.following}'

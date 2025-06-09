@@ -1,9 +1,8 @@
-from colorfield.fields import ColorField
 from django.conf import settings
 from django.core.validators import MaxValueValidator, MinValueValidator
 from django.db import models
 from hashids import Hashids
-from users.models import CustomUser
+from users.models import User
 
 from foodgram.constants import (AMOUNT_MAX, AMOUNT_MIN, COOKING_MAX_TIME,
                                 COOKING_MIN_TIME, INGREDIENT_MAX_LENGHT,
@@ -17,11 +16,6 @@ class Tag(models.Model):
         unique=True,
         max_length=TAG_MAX_LENGHT,
         verbose_name='Название'
-    )
-    color = ColorField(
-        default='#FF0000',
-        unique=False,
-        verbose_name='Цвет'
     )
     slug = models.SlugField(
         unique=True,
@@ -72,7 +66,7 @@ class Recipe(models.Model):
         related_name='tags'
     )
     author = models.ForeignKey(
-        CustomUser,
+        User,
         on_delete=models.CASCADE,
         name=False,
         blank=False,
@@ -160,7 +154,7 @@ class Favorite(models.Model):
     """Избранные рецепты."""
 
     user = models.ForeignKey(
-        CustomUser,
+        User,
         on_delete=models.CASCADE,
         related_name='favorite_user',
         verbose_name='Пользователь'
@@ -188,7 +182,7 @@ class ShoppingCart(models.Model):
     """Модель КОРЗИНА."""
 
     user = models.ForeignKey(
-        CustomUser,
+        User,
         on_delete=models.CASCADE,
         related_name='shopping_cart_user',
         verbose_name='Пользователь',

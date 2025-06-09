@@ -12,12 +12,12 @@ from rest_framework.decorators import action
 from rest_framework.pagination import LimitOffsetPagination
 from rest_framework.permissions import SAFE_METHODS, AllowAny, IsAuthenticated
 from rest_framework.response import Response
-from users.models import CustomUser, Follow
+from users.models import User, Follow
 
 from .filters import IngredientSearchFilter, RecipesFilter
 from .pagination import RecipePagination
 from .permissions import IsAuthorOrReadOnly
-from .serializers import (CustomUserListRetrieveSerializer, FavoriteSerializer,
+from .serializers import (UserListRetrieveSerializer, FavoriteSerializer,
                           FollowGetSerializer, FollowSerializer,
                           IngredientSerializer, RecipeSerializer,
                           RecipeUpdateSerializer, ShoppingCartSerializer,
@@ -36,12 +36,12 @@ def recipe_redirect(request, short_hash):
         raise Http404("Рецепт не найден")
 
 
-class CustomUserViewSet(UserViewSet):
+class UserViewSet(UserViewSet):
     """Вьюсет для пользователей с подписками и аватаром."""
 
-    queryset = CustomUser.objects.all()
+    queryset = User.objects.all()
     permission_classes = (AllowAny,)
-    serializer_class = CustomUserListRetrieveSerializer
+    serializer_class = UserListRetrieveSerializer
     pagination_class = LimitOffsetPagination
 
     @action(
@@ -52,7 +52,7 @@ class CustomUserViewSet(UserViewSet):
     def me(self, request, *args, **kwargs):
         """Возвращает данные текущего пользователя."""
 
-        serializer = CustomUserListRetrieveSerializer(
+        serializer = UserListRetrieveSerializer(
             request.user,
             context={"request": request}
         )
@@ -69,7 +69,7 @@ class CustomUserViewSet(UserViewSet):
 
         user = request.user
         following_id = self.kwargs.get('id')
-        following = get_object_or_404(CustomUser, pk=following_id)
+        following = get_object_or_404(User, pk=following_id)
         data = {"user": user.pk, "following": following.pk}
         serializer = FollowSerializer(
             data=data,
@@ -85,7 +85,7 @@ class CustomUserViewSet(UserViewSet):
 
         user = request.user
         following_id = self.kwargs.get('id')
-        following = get_object_or_404(CustomUser, id=following_id)
+        following = get_object_or_404(User, id=following_id)
         deleted_obj, _ = Follow.objects.filter(
             user=user,
             following=following
@@ -103,7 +103,7 @@ class CustomUserViewSet(UserViewSet):
     )
     def subscriptions(self, request):
         """Список всех подписок пользователя."""
-        queryset = CustomUser.objects.filter(follows__user=request.user)
+        queryset = User.objects.filter(follows__user=request.user)
         paggination = self.paginate_queryset(queryset)
         serializer = FollowGetSerializer(
             paggination,
@@ -127,7 +127,7 @@ class CustomUserViewSet(UserViewSet):
             user.save()
             return Response(status=status.HTTP_204_NO_CONTENT)
         else:
-            serializer = CustomUserListRetrieveSerializer(
+            serializer = UserListRetrieveSerializer(
                 user,
                 data=request.data,
                 partial=True,

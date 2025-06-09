@@ -6,7 +6,7 @@ from recipes.models import (Favorite, Ingredient, Recipe, RecipeIngredient,
                             ShoppingCart, Tag)
 from rest_framework import serializers
 from rest_framework.exceptions import ValidationError
-from users.models import CustomUser, Follow
+from users.models import User, Follow
 
 
 class Base64ImageField(serializers.ImageField):
@@ -24,7 +24,7 @@ class Base64ImageField(serializers.ImageField):
         return super().to_internal_value(data)
 
 
-class CustomUserListRetrieveSerializer(serializers.ModelSerializer):
+class UserListRetrieveSerializer(serializers.ModelSerializer):
     """Сериализатор для чтения данных пользователя с проверкой подписки."""
 
     is_subscribed = serializers.SerializerMethodField(
@@ -33,7 +33,7 @@ class CustomUserListRetrieveSerializer(serializers.ModelSerializer):
     avatar = Base64ImageField(required=False, allow_null=True)
 
     class Meta:
-        model = CustomUser
+        model = User
         fields = (
             'email',
             'id',
@@ -82,14 +82,14 @@ class FollowSerializer(serializers.ModelSerializer):
                                    context=context).data
 
 
-class FollowGetSerializer(CustomUserListRetrieveSerializer):
+class FollowGetSerializer(UserListRetrieveSerializer):
     """Сериализатор для отображения подписок с рецептами."""
 
     recipes = serializers.SerializerMethodField()
     recipes_count = serializers.SerializerMethodField()
 
-    class Meta(CustomUserListRetrieveSerializer.Meta):
-        fields = CustomUserListRetrieveSerializer.Meta.fields + (
+    class Meta(UserListRetrieveSerializer.Meta):
+        fields = UserListRetrieveSerializer.Meta.fields + (
             'recipes_count',
             'recipes'
         )
@@ -151,7 +151,7 @@ class RecipeIngredientSerializer(serializers.ModelSerializer):
 class RecipeSerializer(serializers.ModelSerializer):
     """Полное представление рецепта."""
 
-    author = CustomUserListRetrieveSerializer(read_only=True)
+    author = UserListRetrieveSerializer(read_only=True)
     image = Base64ImageField()
     ingredients = serializers.SerializerMethodField(read_only=True)
     tags = TagSerializer(many=True, read_only=True)
@@ -212,7 +212,7 @@ class RecipeUpdateSerializer(serializers.ModelSerializer):
     Обрабатывает вложенные ингредиенты и теги, выполняет валидацию,
     создание и обновление объектов рецепта.
     """
-    author = CustomUserListRetrieveSerializer(read_only=True)
+    author = UserListRetrieveSerializer(read_only=True)
     image = Base64ImageField()
     ingredients = RecipeIngredientUpdateSerializer(
         many=True,
