@@ -95,7 +95,7 @@ jobs:
           username: ${{ secrets.USER }}
           key: ${{ secrets.SSH_KEY }}
           source: "infra/**"
-          target: "${{ secrets.PROJECT_NAME }}/infra/"
+          target: "${{ secrets.PROJECT_NAME }}/"
           strip_components: 1
           overwrite: true
 
