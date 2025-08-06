@@ -2,10 +2,7 @@ from django.contrib.auth.models import AbstractUser
 from django.core.exceptions import ValidationError
 from django.db import models
 
-from foodgram.constants import (
-    ACCOUNT_USERNAME_LIMIT,
-    USER_EMAIL_LIMIT
-)
+from foodgram.constants import ACCOUNT_USERNAME_LIMIT, USER_EMAIL_LIMIT
 
 
 class User(AbstractUser):

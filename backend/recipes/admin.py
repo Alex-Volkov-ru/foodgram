@@ -1,13 +1,12 @@
 from django.contrib import admin
 from django.db.models import Count
-from django.utils.translation import gettext_lazy as _
 from django.utils.html import format_html
+from django.utils.translation import gettext_lazy as _
 
 from foodgram.constants import BASIC_MIN_VALUE
-from .models import (
-    Favorite, Ingredient, Recipe,
-    RecipeIngredient, ShoppingCart, Tag
-)
+
+from .models import (Favorite, Ingredient, Recipe, RecipeIngredient,
+                     ShoppingCart, Tag)
 
 
 class RecipeIngredientInline(admin.TabularInline):

@@ -1,10 +1,10 @@
 from django.contrib import admin
 from django.contrib.auth.models import Group
-from rest_framework.authtoken.models import TokenProxy
-from django.utils.translation import gettext_lazy as _
 from django.db.models import Count
+from django.utils.translation import gettext_lazy as _
+from rest_framework.authtoken.models import TokenProxy
 
-from .models import User, Follow
+from .models import Follow, User
 
 
 @admin.register(User)

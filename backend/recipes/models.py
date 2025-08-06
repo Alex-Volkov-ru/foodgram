@@ -1,14 +1,13 @@
-from django.db import models
-from django.core.validators import MinValueValidator, MaxValueValidator
 from django.conf import settings
+from django.core.validators import MaxValueValidator, MinValueValidator
+from django.db import models
 from hashids import Hashids
 from users.models import User
 
-from foodgram.constants import (
-    DISH_NAME_LIMIT, PREP_TIME_LOWER, PREP_TIME_UPPER,
-    LABEL_CHARACTER_LIMIT, ITEM_NAME_LIMIT,
-    MINIMUM_QUANTITY, MAXIMUM_QUANTITY, BASIC_MIN_VALUE
-)
+from foodgram.constants import (BASIC_MIN_VALUE, DISH_NAME_LIMIT,
+                                ITEM_NAME_LIMIT, LABEL_CHARACTER_LIMIT,
+                                MAXIMUM_QUANTITY, MINIMUM_QUANTITY,
+                                PREP_TIME_LOWER, PREP_TIME_UPPER)
 
 
 class RecipeIngredient(models.Model):

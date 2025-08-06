@@ -5,10 +5,8 @@ from django.shortcuts import get_object_or_404, redirect
 from django_filters.rest_framework import DjangoFilterBackend
 from djoser.views import UserViewSet
 from hashids import Hashids
-from recipes.models import (
-    Favorite, Ingredient, Recipe, RecipeIngredient,
-    ShoppingCart, Tag
-)
+from recipes.models import (Favorite, Ingredient, Recipe, RecipeIngredient,
+                            ShoppingCart, Tag)
 from rest_framework import status, viewsets
 from rest_framework.decorators import action
 from rest_framework.pagination import LimitOffsetPagination
@@ -16,16 +14,14 @@ from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from users.models import Follow, User
 
-from .filters import IngredientNameFilter, CustomRecipeFilter
+from .filters import CustomRecipeFilter, IngredientNameFilter
 from .pagination import CustomRecipePaginator
 from .permissions import ContentOwnerAccessControl
-from .serializers import (
-    FavoriteSerializer, FollowDetailViewSerializer,
-    FollowCreateHandlerSerializer, IngredientViewSerializer,
-    RecipeDetailSerializer, RecipeEditHandlerSerializer,
-    ShoppingCartSerializer, TagViewSerializer,
-    UserProfileViewSerializer
-)
+from .serializers import (FavoriteSerializer, FollowCreateHandlerSerializer,
+                          FollowDetailViewSerializer, IngredientViewSerializer,
+                          RecipeDetailSerializer, RecipeEditHandlerSerializer,
+                          ShoppingCartSerializer, TagViewSerializer,
+                          UserProfileViewSerializer)
 
 
 def get_recipe_by_hash(request, short_hash):
