@@ -88,29 +88,33 @@ jobs:
     steps:
       - uses: actions/checkout@v3
 
+      - name: Verify files structure
+        run: |
+          ls -la
+          ls -la infra/
+          ls -la docs/
+
       - name: Copy infra files via SCP
         uses: appleboy/scp-action@master
         with:
           host: ${{ secrets.HOST }}
           username: ${{ secrets.USER }}
           key: ${{ secrets.SSH_KEY }}
-          source: "infra/**"
-          target: "${{ secrets.PROJECT_NAME }}/"
-          strip_components: 1
+          source: "infra/docker-compose*.yml,infra/nginx*.conf"
+          target: "${{ secrets.PROJECT_NAME }}/infra/"
           overwrite: true
 
-      - name: Copy docs files via SCP
-        uses: appleboy/scp-action@master
+      - name: Prepare remote server
+        uses: appleboy/ssh-action@master
         with:
           host: ${{ secrets.HOST }}
           username: ${{ secrets.USER }}
           key: ${{ secrets.SSH_KEY }}
-          source: "docs/**"
-          target: "${{ secrets.PROJECT_NAME }}/docs/"
-          strip_components: 1
-          overwrite: true
+          script: |
+            mkdir -p ${{ secrets.PROJECT_NAME }}/infra
+            sudo chown -R $USER:$USER ${{ secrets.PROJECT_NAME }}
 
-      - name: Execute remote deploy commands via SSH
+      - name: Execute remote deploy commands
         uses: appleboy/ssh-action@master
         with:
           host: ${{ secrets.HOST }}
@@ -120,7 +124,7 @@ jobs:
             cd ${{ secrets.PROJECT_NAME }}/infra
             sudo docker compose -f docker-compose.production.yml pull
             sudo docker compose -f docker-compose.production.yml down
-            sudo docker compose -f docker-compose.production.yml up -d
+            sudo docker compose -f docker-compose.production.yml up -d --build
             sudo docker compose -f docker-compose.production.yml exec backend python manage.py migrate
             sudo docker compose -f docker-compose.production.yml exec backend python manage.py collectstatic --no-input
 
