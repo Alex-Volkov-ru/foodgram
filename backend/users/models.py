@@ -2,73 +2,76 @@ from django.contrib.auth.models import AbstractUser
 from django.core.exceptions import ValidationError
 from django.db import models
 
-from foodgram.constants import EMAIL_MAX_LENGTH, USER_FIELDS_MAX_LENGTH
+from foodgram.constants import (
+    ACCOUNT_USERNAME_LIMIT,
+    USER_EMAIL_LIMIT
+)
 
 
 class User(AbstractUser):
     """Модель пользователя с email в качестве USERNAME_FIELD."""
-    first_name = models.CharField(
-        max_length=USER_FIELDS_MAX_LENGTH,
-        verbose_name='Имя'
+    email = models.EmailField(
+        verbose_name='Электронная почта',
+        max_length=USER_EMAIL_LIMIT,
+        unique=True
     )
     last_name = models.CharField(
-        max_length=USER_FIELDS_MAX_LENGTH,
-        verbose_name='Фамилия'
+        verbose_name='Фамилия',
+        max_length=ACCOUNT_USERNAME_LIMIT
     )
-    email = models.EmailField(
-        unique=True,
-        max_length=EMAIL_MAX_LENGTH,
-        verbose_name='Электронная почта'
+    first_name = models.CharField(
+        verbose_name='Имя',
+        max_length=ACCOUNT_USERNAME_LIMIT
     )
     avatar = models.ImageField(
+        verbose_name='Аватар',
         upload_to='avatars/',
-        null=True,
-        blank=True,
         default='',
-        verbose_name='Аватар'
+        blank=True,
+        null=True
     )
 
     USERNAME_FIELD = 'email'
-    REQUIRED_FIELDS = ['password', 'username', 'first_name', 'last_name']
+    REQUIRED_FIELDS = ['username', 'first_name', 'last_name', 'password']
 
     class Meta:
         verbose_name = 'Пользователь'
         verbose_name_plural = 'Пользователи'
 
     def __str__(self):
-        return f'{self.first_name} {self.last_name}'
+        return f'{self.last_name} {self.first_name}'
 
 
 class Follow(models.Model):
     """Модель подписки пользователей."""
-    user = models.ForeignKey(
-        User,
-        on_delete=models.CASCADE,
-        related_name='followed'
-    )
     following = models.ForeignKey(
         User,
-        on_delete=models.CASCADE,
-        related_name='follows',
+        verbose_name='Автор контента',
+        related_name='followers',
+        on_delete=models.CASCADE
+    )
+    follower = models.ForeignKey(
+        User,
+        verbose_name='Подписчик',
+        related_name='following_authors',
+        on_delete=models.CASCADE
     )
 
     class Meta:
         constraints = [
             models.UniqueConstraint(
-                fields=['user', 'following'],
-                name='unique_pair'
+                fields=['follower', 'following'],
+                name='unique_subscription'
             )
         ]
 
     def clean(self):
-        if self.user == self.following:
-            raise ValidationError(
-                "Пользователь не может подписаться на самого себя")
-        return super().clean()
+        if self.follower == self.following:
+            raise ValidationError("Подписка на себя невозможна")
 
     def save(self, *args, **kwargs):
         self.full_clean()
-        return super().save(*args, **kwargs)
+        super().save(*args, **kwargs)
 
     def __str__(self):
-        return f'{self.user} подписан на {self.following}'
+        return f'Подписка: {self.follower} → {self.following}'
