@@ -21,15 +21,18 @@ jobs:
 
     steps:
     - uses: actions/checkout@v3
+
     - name: Set up Python
       uses: actions/setup-python@v4
       with:
         python-version: 3.9
+
     - name: Install dependencies
       run: |
-        python -m pip install --upgrade pip
+        python -m pip install --upgrade pip 
         pip install flake8==6.0.0 flake8-isort==6.0.0
         pip install -r ./backend/requirements.txt
+
     - name: Test with flake8 and Django tests
       env:
         POSTGRES_USER: foodgram_user
@@ -85,21 +88,15 @@ jobs:
     steps:
       - uses: actions/checkout@v3
 
-      - name: Prepare deployment files
-        run: |
-          mkdir -p deploy/infra
-          cp infra/docker-compose.production.yml deploy/infra/
-          cp infra/nginx-production.conf deploy/infra/
-          cp -r docs/ deploy/
-
       - name: Copy infra files via SCP
         uses: appleboy/scp-action@master
         with:
           host: ${{ secrets.HOST }}
           username: ${{ secrets.USER }}
           key: ${{ secrets.SSH_KEY }}
-          source: "deploy/infra/*"
-          target: "${{ secrets.PROJECT_NAME }}/infra/"
+          source: "infra/**"
+          target: "${{ secrets.PROJECT_NAME }}/"
+          strip_components: 1
           overwrite: true
 
       - name: Copy docs files via SCP
@@ -108,8 +105,9 @@ jobs:
           host: ${{ secrets.HOST }}
           username: ${{ secrets.USER }}
           key: ${{ secrets.SSH_KEY }}
-          source: "deploy/docs/*"
+          source: "docs/**"
           target: "${{ secrets.PROJECT_NAME }}/docs/"
+          strip_components: 1
           overwrite: true
 
       - name: Execute remote deploy commands via SSH
@@ -120,17 +118,11 @@ jobs:
           key: ${{ secrets.SSH_KEY }}
           script: |
             cd ${{ secrets.PROJECT_NAME }}/infra
-            echo "Stopping and removing old containers..."
-            sudo docker compose -f docker-compose.production.yml down
-            echo "Pulling new images..."
             sudo docker compose -f docker-compose.production.yml pull
-            echo "Starting new containers..."
+            sudo docker compose -f docker-compose.production.yml down
             sudo docker compose -f docker-compose.production.yml up -d
-            echo "Running migrations..."
             sudo docker compose -f docker-compose.production.yml exec backend python manage.py migrate
-            echo "Collecting static files..."
             sudo docker compose -f docker-compose.production.yml exec backend python manage.py collectstatic --no-input
-            echo "Deployment completed successfully!"
 
   notify:
     runs-on: ubuntu-latest
