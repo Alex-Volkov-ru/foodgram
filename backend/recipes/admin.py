@@ -42,7 +42,7 @@ class RecipeAdmin(admin.ModelAdmin):
     """Администрирование рецептов"""
     list_display = (
         'id', 'name', 'author', 'cooking_time',
-        'favorites_count', 'shopping_carts_count', 
+        'favorites_count', 'shopping_carts_count',
         'ingredients_count', 'pub_date', 'image_preview'
     )
     list_filter = ('tags', 'author')
@@ -50,7 +50,8 @@ class RecipeAdmin(admin.ModelAdmin):
         'name', 'author__username',
         'author__email', 'tags__name'
     )
-    readonly_fields = ('favorites_count', 'shopping_carts_count', 'pub_date', 'image_preview')
+    readonly_fields = (
+        'favorites_count', 'shopping_carts_count', 'pub_date', 'image_preview')
     filter_horizontal = ('tags',)
     inlines = (RecipeIngredientInline,)
     date_hierarchy = 'pub_date'
@@ -82,7 +83,9 @@ class RecipeAdmin(admin.ModelAdmin):
 
     def image_preview(self, obj):
         if obj.image:
-            return format_html('<img src="{}" style="max-height: 50px; max-width: 50px;" />', obj.image.url)
+            return format_html(
+                '<img src="{}" style="max-height: 50px; max-width: 50px;" />',
+                obj.image.url)
         return "-"
     image_preview.short_description = _('Превью')
 

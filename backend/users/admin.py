@@ -20,7 +20,7 @@ class UserAdmin(admin.ModelAdmin):
     )
     search_fields = ('email', 'username', 'last_name', 'first_name')
     list_filter = ('email', 'username')
-    
+
     def get_queryset(self, request):
         queryset = super().get_queryset(request)
         queryset = queryset.annotate(
