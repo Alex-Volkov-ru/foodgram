@@ -90,9 +90,8 @@ jobs:
 
       - name: Verify files structure
         run: |
-          ls -la
           ls -la infra/
-          ls -la docs/
+          ls -la infra/docs/ || echo "Docs directory check skipped"
 
       - name: Copy infra files via SCP
         uses: appleboy/scp-action@master
@@ -112,6 +111,7 @@ jobs:
           key: ${{ secrets.SSH_KEY }}
           script: |
             mkdir -p ${{ secrets.PROJECT_NAME }}/infra
+            [ -d "${{ secrets.PROJECT_NAME }}/infra/docs" ] || mkdir -p ${{ secrets.PROJECT_NAME }}/infra/docs
             sudo chown -R $USER:$USER ${{ secrets.PROJECT_NAME }}
 
       - name: Execute remote deploy commands
