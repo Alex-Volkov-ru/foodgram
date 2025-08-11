@@ -106,12 +106,20 @@ class UserViewSet(UserViewSet):
 
     @action(
         detail=False,
-        methods=['put', 'patch'],
+        methods=['put', 'patch', 'delete'],
         permission_classes=[IsAuthenticated],
         url_path='me/avatar'
     )
     def update_avatar(self, request):
         user = request.user
+
+        if request.method == 'DELETE':
+            if user.avatar:
+                user.avatar.delete(save=False)
+                user.avatar = None
+                user.save(update_fields=['avatar'])
+            return Response(status=status.HTTP_204_NO_CONTENT)
+
         serializer = self.get_serializer(user, data=request.data, partial=True)
         serializer.is_valid(raise_exception=True)
         serializer.save()
