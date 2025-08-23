@@ -1,164 +1,236 @@
-# Финальный проект спринта - foodgram
+# Финальный проект спринта — Foodgram
 
-## Описание проекта:
-Проект Foodgram, написанный на DjangoRF и React — веб-сервис,  
-который позволяет работать с кулинарными рецептами. Сервис предоставляет возможность  
-создавать свои рецепты, следить за чужими, подписываться на авторов рецептов,  
-добавлять рецепты в избранное и формировать список покупок.
+Проект **Foodgram** — это веб‑сервис на **Django + DRF** и **React**, где пользователи публикуют рецепты, подписываются на авторов, добавляют рецепты в избранное и формируют список покупок (с суммированием ингредиентов).
 
-* Веб-сервис доступен по адресу - [https://foodgramforum.duckdns.org](https://foodgramforum.duckdns.org)
+- Продакшен: **https://foodgramforum.duckdns.org**
+- Документация API (ReDoc): **https://foodgramforum.duckdns.org/api/docs/**
+- Админка: **https://foodgramforum.duckdns.org/admin/**
 
-## Автор проекта:
-**Волков Александр** — [https://t.me/ximikat01](https://t.me/ximikat01)
-
-## Технологии проекта:
-* Python 3.9  
-* Django==4.2.11  
-* djangorestframework==3.15.1  
-* PostgreSQL (psycopg2-binary==2.9.9)  
-* React  
-* Docker / Docker Compose  
-* Nginx  
-* Gunicorn==21.2.0  
-
-Дополнительно:
-```
-djoser==2.2.2  
-Pillow==10.3.0  
-django-cleanup==8.1.0  
-django-filter==2.4.0  
-fpdf2==2.7.8  
-uharfbuzz==0.39.1  
-drf_extra_fields==3.7.0  
-python-dotenv  
-django-cors-headers==3.13.0  
-django-colorfield==0.11.0  
-webcolors==1.11.1  
-pytest==6.2.4  
-pytest-django==4.4.0  
-pytest-pythonpath==0.7.3  
-PyYAML==6.0  
-hashids
-```
-
-## CI/CD:
-Проект автоматически деплоится на сервер через GitHub Actions и Docker.  
-При пуше в `main` происходит автоматическая сборка и выкладка на сервер с Nginx и PostgreSQL.
+> Примечания по маршрутам:
+> - `/admin` без завершающего слэша автоматически перенаправляется на `/admin/` на уровне Nginx.
+> - Короткие ссылки рецептов имеют вид `/s/<hash>` и обрабатываются бэкендом (декодирование и редирект).
 
 ---
 
-## Как запустить проект в Docker:
+## Содержание
+- [Стек технологий](#стек-технологий)
+- [Архитектура и инфраструктура](#архитектура-и-инфраструктура)
+- [CI/CD](#cicd)
+- [Быстрый старт в Docker](#быстрый-старт-в-docker)
+  - [Локальная разработка (Docker + PostgreSQL)](#локальная-разработка-docker--postgresql)
+  - [Продакшен (Docker на сервере)](#продакшен-docker-на-сервере)
+- [Запуск без Docker (SQLite)](#запуск-без-docker-sqlite)
+- [Переменные окружения (.env)](#переменные-окружения-env)
+- [Загрузка ингредиентов](#загрузка-ингредиентов)
+- [Примеры запросов к API](#примеры-запросов-к-api)
+- [Права доступа и роли](#права-доступа-и-роли)
+- [Автор](#автор)
 
-* Клонировать репозиторий:
+---
 
-`git clone https://github.com/ximikat01/foodgram-project-react.git`
+## Стек технологий
 
-* Перейти в папку `infra`, где находится `docker-compose.yml`:
+**Backend**
+- Python 3.9
+- Django 4.2.x
+- Django REST Framework 3.15.x
+- Djoser 2.2.x (token auth)
+- PostgreSQL + psycopg2-binary
+- Gunicorn
+- django-filter, drf-extra-fields, Pillow, hashids, fpdf2
 
-`cd foodgram-project-react/infra`
+**Frontend**
+- React (готовая сборка)
 
-* Создать файл `.env` и заполнить его переменными окружения. Пример:
+**DevOps**
+- Docker, Docker Compose
+- Nginx
+- GitHub Actions (CI/CD)
 
+---
+
+## Архитектура и инфраструктура
+
+- Контейнеры: `backend` (Django+Gunicorn), `db` (PostgreSQL), `nginx`, а также сборочный `frontend` (кладёт билд в общий том).
+- Nginx:
+  - `/` — SPA фронтенд (из тома `frontend_volume`)
+  - `/api/` и `/admin/` — проксируются в `backend:8000`
+  - `/api/docs/` — **статическая** документация ReDoc (alias на каталог с файлами)
+  - `/django_static/` и `/media/` — alias на тома `backend`-контейнера
+  - `/s/<hash>` — короткие ссылки → прокси в бэкенд (декодирование и редирект)
+  - `/admin` → 301 на `/admin/`
+- Данные и файлы хранятся в volumes: БД, статика, медиа, билд фронта.
+
+---
+
+## CI/CD
+
+Проект автоматически деплоится на сервер через **GitHub Actions** и **Docker**: при пуше в ветку `main` происходит сборка образов (backend / frontend), публикация в реестр и перезапуск контейнеров на сервере, затем выполняются миграции и сборка статики.
+
+---
+
+## Быстрый старт в Docker
+
+> Все команды ниже выполняются из каталога `infra/` репозитория.
+
+### Локальная разработка (Docker + PostgreSQL)
+
+1. Клонируйте репозиторий:
+   ```bash
+   git clone https://github.com/ximikat01/foodgram-project-react.git
+   cd foodgram-project-react/infra
+   ```
+
+2. Создайте файл `.env` (пример для локали — см. ниже в разделе **Переменные окружения**).
+
+3. Поднимите контейнеры:
+   ```bash
+   docker compose -f docker-compose.local.yml up -d
+   ```
+
+4. Примените миграции, создайте суперпользователя, соберите статику:
+   ```bash
+   docker compose -f docker-compose.local.yml exec backend python manage.py migrate
+   docker compose -f docker-compose.local.yml exec backend python manage.py createsuperuser
+   docker compose -f docker-compose.local.yml exec backend python manage.py collectstatic --noinput
+   ```
+
+5. Загрузите ингредиенты (см. раздел **Загрузка ингредиентов**).
+
+6. Проверьте:
+   - Frontend: http://localhost
+   - API docs: http://localhost/api/docs/
+
+### Продакшен (Docker на сервере)
+
+1. На сервере в `infra/` подготовьте `.env` (пример ниже).
+
+2. Убедитесь, что в `docker-compose.production.yml` смонтированы:
+   - статика/медиа/фронт,
+   - **документация**: `./docs/:/usr/share/nginx/html/api/docs/:ro` (для `/api/docs/`).
+
+3. Запустите:
+   ```bash
+   docker compose -f docker-compose.production.yml up -d
+   docker compose -f docker-compose.production.yml exec backend python manage.py migrate
+   docker compose -f docker-compose.production.yml exec backend python manage.py collectstatic --noinput
+   ```
+
+4. (Опционально) создайте суперпользователя:
+   ```bash
+   docker compose -f docker-compose.production.yml exec backend python manage.py createsuperuser
+   ```
+
+5. Загрузите ингредиенты (см. ниже).
+
+---
+
+## Запуск без Docker (SQLite)
+
+1. Клонируйте репозиторий и установите зависимости:
+   ```bash
+   git clone https://github.com/ximikat01/foodgram-project-react.git
+   cd foodgram-project-react/backend
+   python3 -m venv venv
+   source venv/bin/activate
+   pip install -r requirements.txt
+   ```
+
+2. Создайте `.env` (минимум: `SECRET_KEY`, `DEBUG`, `ALLOWED_HOSTS`, `BASE_URL`).
+
+3. Выполните миграции, создайте суперпользователя и соберите статику:
+   ```bash
+   python manage.py migrate
+   python manage.py createsuperuser
+   python manage.py collectstatic --noinput
+   ```
+
+4. Импортируйте ингредиенты (см. ниже) и запустите сервер:
+   ```bash
+   python manage.py runserver
+   ```
+
+---
+
+## Переменные окружения (.env)
+
+### Пример для локальной разработки (Docker)
 ```
-DB_ENGINE=django.db.backends.postgresql
-DB_NAME=postgres
-POSTGRES_USER=postgres
-POSTGRES_PASSWORD=postgres
+SECRET_KEY=your-secret-key
+DEBUG=True
+ALLOWED_HOSTS=localhost,127.0.0.1
+CSRF_TRUSTED_ORIGINS=http://localhost,http://127.0.0.1
+BASE_URL=http://localhost
+
+POSTGRES_DB=foodgram
+POSTGRES_USER=foodgram_user
+POSTGRES_PASSWORD=foodgram_password
 DB_HOST=db
 DB_PORT=5432
-SECRET_KEY=your-secret-key
+```
+
+### Пример для продакшена (Docker на сервере)
+```
+SECRET_KEY=prod-secret
 DEBUG=False
-ALLOWED_HOSTS=localhost,127.0.0.1
+ALLOWED_HOSTS=foodgramforum.duckdns.org
+CSRF_TRUSTED_ORIGINS=https://foodgramforum.duckdns.org
+BASE_URL=https://foodgramforum.duckdns.org
+
+POSTGRES_DB=foodgram
+POSTGRES_USER=foodgram_user
+POSTGRES_PASSWORD=<strong-pass>
+DB_HOST=db
+DB_PORT=5432
 ```
 
-* Поднять контейнеры:
-
-`docker compose up --detach`
-
-* Выполнить миграции, создать суперпользователя, собрать статику:
-
-```
-docker compose exec backend python3 manage.py makemigrations
-docker compose exec backend python3 manage.py migrate
-docker compose exec backend python3 manage.py createsuperuser
-docker compose exec backend python3 manage.py collectstatic --noinput
-docker compose exec backend cp -r /app/collected_static/. /backend_static/static/
-```
-
-* Загрузить ингредиенты:
-
-`docker compose exec backend python3 manage.py load_ingredients_sqlite data/ingredients.csv`
+> Важно: переменные `POSTGRES_*` используются контейнером БД и читаются Django-настройками.
+> Значение `BASE_URL` применяется для генерации коротких ссылок вида `BASE_URL/s/<hash>`.
 
 ---
 
-## Как развернуть проект без Docker:
+## Загрузка ингредиентов
 
-* Клонировать репозиторий:
+Файл с данными: `backend/data/ingredients.csv` (или из репозитория).
 
-`git clone https://github.com/ximikat01/foodgram-project-react.git`
+- **SQLite (без Docker):**
+  ```bash
+  python manage.py load_ingredients_sqlite data/ingredients.csv
+  ```
 
-* Перейти в backend проекта:
-
-`cd foodgram-project-react/backend/`
-
-* Создать виртуальное окружение и активировать его:
-
-```
-python3 -m venv venv
-source venv/bin/activate
-```
-
-* Установить зависимости:
-
-`pip install -r requirements.txt`
-
-* Создать `.env` по примеру выше и указать `SECRET_KEY`, `DB_NAME`, `DB_USER`, `DB_PASSWORD` и т.д.
-
-* Выполнить миграции и создать суперпользователя:
-
-```
-python manage.py migrate
-python manage.py createsuperuser
-```
-
-* Импортировать ингредиенты:
-
-`python manage.py load_ingredients_sqlite data/ingredients.csv`
-
-* Собрать и применить статику:
-
-```
-python manage.py collectstatic --noinput
-```
-
-* Запустить сервер:
-
-`python manage.py runserver`
+- **PostgreSQL (в Docker):**
+  ```bash
+  docker compose -f infra/docker-compose.local.yml exec backend     python manage.py load_ingredients_pg data/ingredients.csv
+  # или для продакшена
+  docker compose -f infra/docker-compose.production.yml exec backend     python manage.py load_ingredients_pg data/ingredients.csv
+  ```
 
 ---
 
-## Примеры запросов к API:
+## Примеры запросов к API
 
-* Получение токена:
+Аутентификация (Djoser, token):
+```http
+POST /api/auth/token/login/
+Content-Type: application/json
 
-`POST "/api/auth/login/"`  
-`body={"email": "string", "password": "string"}`
-
-* Получение рецептов:
-
-`GET "/api/recipes"`
-
-* Создание рецепта:
-
+{"email": "user@example.com", "password": "string"}
 ```
-POST "/api/recipes/"
+```http
+POST /api/auth/token/logout/
+```
+
+Рецепты:
+```http
+GET /api/recipes/
+```
+Создание рецепта:
+```http
+POST /api/recipes/
+Content-Type: application/json
+
 {
-  "ingredients": [
-    {
-      "id": 1123,
-      "amount": 10
-    }
-  ],
+  "ingredients": [{"id": 1123, "amount": 10}],
   "tags": [1, 2],
   "image": "data:image/png;base64,...",
   "name": "string",
@@ -167,14 +239,42 @@ POST "/api/recipes/"
 }
 ```
 
-* Получение ингредиентов:
+Ингредиенты (поиск по началу названия, регистронезависимо):
+```http
+GET /api/ingredients/?name=са
+```
 
-`GET "/api/ingredients"`
+Подписки:
+```http
+POST /api/users/{id}/subscribe/
+DELETE /api/users/{id}/subscribe/
+GET  /api/users/subscriptions/
+```
 
-* Подписаться на автора:
+Избранное и список покупок:
+```http
+POST   /api/recipes/{id}/favorite/
+DELETE /api/recipes/{id}/favorite/
 
-`POST "/api/users/{id}/subscribe"`
+POST   /api/recipes/{id}/shopping_cart/
+DELETE /api/recipes/{id}/shopping_cart/
+GET    /api/recipes/download_shopping_cart/   # .txt, ингредиенты суммируются
+```
 
-* Полная документация по API доступна по адресу:
+Полная спецификация: **/api/docs/**
 
-`/api/docs/`
+---
+
+## Права доступа и роли
+
+- **Гость:** просмотр рецептов, страниц пользователей, регистрация/вход.
+- **Авторизованный:** создание/редактирование/удаление собственных рецептов; избранное; корзина; подписки; смена пароля; аватар.
+- **Админ:** админ-зона со всеми моделями; поиск и фильтрация по требованиям.
+
+Сортировка рецептов — по дате публикации (новые выше). Пагинация — PageNumber (по умолчанию `page_size=6`, параметр `limit`).
+
+---
+
+## Автор
+
+**Волков Александр** — https://t.me/ximikat01
