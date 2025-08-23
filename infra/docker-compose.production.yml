@@ -43,6 +43,7 @@ services:
       - frontend_volume:/frontend-dist
       - media_volume:/app/media
       - /etc/letsencrypt:/etc/letsencrypt:ro
+      - ./docs/:/usr/share/nginx/html/api/docs/:ro 
     depends_on:
       - backend
       - frontend
