@@ -58,8 +58,8 @@ class RecipeAdmin(admin.ModelAdmin):
     def get_queryset(self, request):
         qs = super().get_queryset(request)
         return qs.annotate(
-            _favorites_count=Count('in_favorites', distinct=True),
-            _shopping_carts_count=Count('in_shopping_carts', distinct=True),
+            _favorites_count=Count('favorites', distinct=True),
+            _shopping_carts_count=Count('shopping_carts', distinct=True),
             _ingredients_count=Count('ingredients', distinct=True),
         )
 
@@ -84,7 +84,7 @@ class RecipeAdmin(admin.ModelAdmin):
                 '<img src="{}" style="max-height:50px; max-width:50px;" />',
                 obj.image.url
             )
-        return "—"
+        return '—'
 
 
 @admin.register(Favorite)

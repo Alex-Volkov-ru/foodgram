@@ -172,7 +172,18 @@ class Tag(models.Model):
 
 
 class UserRecipeBase(models.Model):
-    """Базовая связь пользователь—рецепт."""
+    """Базовая связь пользователь—рецепт (общие поля)."""
+
+    user = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        verbose_name='Пользователь',
+    )
+    recipe = models.ForeignKey(
+        'Recipe',
+        on_delete=models.CASCADE,
+        verbose_name='Рецепт',
+    )
 
     class Meta:
         abstract = True
@@ -184,19 +195,6 @@ class UserRecipeBase(models.Model):
 class Favorite(UserRecipeBase):
     """Избранные рецепты."""
 
-    user = models.ForeignKey(
-        User,
-        on_delete=models.CASCADE,
-        related_name='favorites',
-        verbose_name='Пользователь',
-    )
-    recipe = models.ForeignKey(
-        Recipe,
-        on_delete=models.CASCADE,
-        related_name='in_favorites',
-        verbose_name='Рецепт',
-    )
-
     class Meta:
         constraints = [
             models.UniqueConstraint(
@@ -206,23 +204,11 @@ class Favorite(UserRecipeBase):
         ]
         verbose_name = 'Избранное'
         verbose_name_plural = 'Избранные рецепты'
+        default_related_name = 'favorites'
 
 
 class ShoppingCart(UserRecipeBase):
     """Список покупок."""
-
-    user = models.ForeignKey(
-        User,
-        on_delete=models.CASCADE,
-        related_name='shopping_carts',
-        verbose_name='Пользователь',
-    )
-    recipe = models.ForeignKey(
-        Recipe,
-        on_delete=models.CASCADE,
-        related_name='in_shopping_carts',
-        verbose_name='Рецепт',
-    )
 
     class Meta:
         constraints = [
@@ -233,3 +219,4 @@ class ShoppingCart(UserRecipeBase):
         ]
         verbose_name = 'Корзина покупок'
         verbose_name_plural = 'Корзины покупок'
+        default_related_name = 'shopping_carts'
