@@ -39,8 +39,6 @@
 - Gunicorn
 - django-filter, drf-extra-fields, Pillow, hashids, fpdf2
 
-**Frontend**
-- React (готовая сборка)
 
 **DevOps**
 - Docker, Docker Compose

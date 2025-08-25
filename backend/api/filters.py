@@ -1,12 +1,12 @@
 from django.db.models import Q
-from django_filters.rest_framework import FilterSet, filters
-from recipes.models import Recipe, Tag
+from django_filters import rest_framework as filters
 from rest_framework.filters import SearchFilter
+
+from recipes.models import Recipe, Tag
 
 
 class IngredientNameFilter(SearchFilter):
-    """Фильтр поиска ингредиентов по совпадению в названии"""
-
+    """Фильтр поиска ингредиентов по совпадению в начале названия."""
     def __init__(self):
         super().__init__()
         self.search_param = 'name'
@@ -16,61 +16,58 @@ class IngredientNameFilter(SearchFilter):
         if not search_terms:
             return queryset
 
-        queries = []
+        # накапливаем OR по началу строки (истартсвит)
+        query = Q()
         for term in search_terms:
-            queries.append(Q(name__istartswith=term))
-
-        query = queries.pop()
-        for item in queries:
-            query |= item
+            query |= Q(name__istartswith=term)
 
         return queryset.filter(query).distinct()
 
 
-class CustomRecipeFilter(FilterSet):
-    """Набор фильтров для рецептов с возможностью:
-    - фильтрации по тегам
-    - поиска по автору
-    - выборки избранных рецептов
-    - выборки рецептов в списке покупок
+class CustomRecipeFilter(filters.FilterSet):
+    """
+    Фильтры для рецептов:
+    - по тегам (slug),
+    - по автору (id),
+    - только избранные текущего пользователя,
+    - только в корзине текущего пользователя.
     """
 
     tags = filters.ModelMultipleChoiceFilter(
         queryset=Tag.objects.all(),
         field_name='tags__slug',
         to_field_name='slug',
-        label='Список тегов для фильтрации'
+        label='Список тегов для фильтрации',
     )
 
-    author_id = filters.NumberFilter(
+    author = filters.NumberFilter(
         field_name='author__id',
-        label='Идентификатор автора рецепта'
+        label='Идентификатор автора рецепта',
     )
 
-    is_in_favorites = filters.BooleanFilter(
-        method='filter_by_favorites',
-        label='Показать только избранные рецепты'
+    is_favorited = filters.BooleanFilter(
+        method='filter_is_favorited',
+        label='Показать только избранные рецепты',
     )
 
-    is_in_shopping_list = filters.BooleanFilter(
-        method='filter_by_shopping_list',
-        label='Показать рецепты в списке покупок'
+    is_in_shopping_cart = filters.BooleanFilter(
+        method='filter_is_in_shopping_cart',
+        label='Показать рецепты в списке покупок',
     )
 
     class Meta:
         model = Recipe
-        fields = ['tags', 'author_id']
+        fields = ('tags', 'author', 'is_favorited', 'is_in_shopping_cart')
 
-    def filter_by_favorites(self, queryset, name, value):
-        """Отфильтровать рецепты по наличию в избранном"""
-        user = self.request.user
-        if value and user.is_authenticated:
-            return queryset.filter(favorite_recipes__user=user)
+    def filter_is_favorited(self, queryset, name, value):
+        user = getattr(self.request, 'user', None)
+        if value and user and user.is_authenticated:
+
+            return queryset.filter(in_favorites__user=user).distinct()
         return queryset
 
-    def filter_by_shopping_list(self, queryset, name, value):
-        """Отфильтровать рецепты по наличию в списке покупок"""
-        user = self.request.user
-        if value and user.is_authenticated:
-            return queryset.filter(shopping_cart_recipes__user=user)
+    def filter_is_in_shopping_cart(self, queryset, name, value):
+        user = getattr(self.request, 'user', None)
+        if value and user and user.is_authenticated:
+            return queryset.filter(in_shopping_carts__user=user).distinct()
         return queryset
