@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 from typing import Optional
 import base64
+from random import randint, sample
 
 from django.core.files.base import ContentFile
 from django.core.management.base import BaseCommand
@@ -22,12 +23,6 @@ def get_placeholder_bytes() -> bytes:
     return base64.b64decode(PNG_1PX_B64)
 
 
-TAGS = [
-    {"name": "Завтрак", "slug": "breakfast"},
-    {"name": "Обед", "slug": "lunch"},
-    {"name": "Ужин", "slug": "dinner"},
-]
-
 # Справочник единиц
 U = {
     "g": "г",
@@ -40,12 +35,11 @@ U = {
     "leaf": "лист",
 }
 
-# Рецепты
+# Рецепты (теги игнорируются — будут выбраны случайно из БД)
 RECIPES = [
     {
         "name": "Овсяноблин с бананом",
         "time": 15,
-        "tags": ["breakfast"],
         "text": (
             "1) Измельчите хлопья, смешайте с яйцом, молоком и солью.\n"
             "2) Разогрейте сковороду, смажьте маслом, вылейте тесто.\n"
@@ -64,7 +58,6 @@ RECIPES = [
     {
         "name": "Шакшука",
         "time": 25,
-        "tags": ["breakfast", "lunch"],
         "text": (
             "1) Обжарьте лук и перец 5 мин.\n"
             "2) Добавьте чеснок, паприку и тмин на 30 сек.\n"
@@ -88,7 +81,6 @@ RECIPES = [
     {
         "name": "Сырники запечённые",
         "time": 30,
-        "tags": ["breakfast"],
         "text": (
             "1) Смешайте творог, яйцо, сахар, манку, разрыхлитель и ваниль.\n"
             "2) Сформуйте сырники, присыпьте мукой.\n"
@@ -107,7 +99,6 @@ RECIPES = [
     {
         "name": "Суп-пюре из тыквы",
         "time": 35,
-        "tags": ["lunch", "dinner"],
         "text": (
             "1) Обжарьте лук и морковь 3–4 мин.\n"
             "2) Добавьте тыкву и бульон, варите 15–18 мин.\n"
@@ -128,7 +119,6 @@ RECIPES = [
     {
         "name": "Паста с томатами и базиликом",
         "time": 20,
-        "tags": ["lunch", "dinner"],
         "text": (
             "1) Отварите пасту до al dente.\n"
             "2) На масле прогрейте чеснок, добавьте томаты, тушите 5–6 мин.\n"
@@ -148,7 +138,6 @@ RECIPES = [
     {
         "name": "Гречка с грибами и луком",
         "time": 25,
-        "tags": ["dinner", "lunch"],
         "text": (
             "1) Варите гречку 15 мин.\n"
             "2) Обжарьте лук и морковь, добавьте грибы 5–6 мин.\n"
@@ -169,7 +158,6 @@ RECIPES = [
     {
         "name": "Куриные котлеты на пару с пюре",
         "time": 40,
-        "tags": ["lunch", "dinner"],
         "text": (
             "1) Смешайте фарш с размоченным хлебом, луком и яйцом.\n"
             "2) Сформируйте котлеты и готовьте на пару 15–18 мин.\n"
@@ -179,7 +167,7 @@ RECIPES = [
             ("Фарш куриный", 500, U["g"]),
             ("Лук репчатый", 1, U["pcs"]),
             ("Хлеб пшеничный", 1, U["slice"]),
-            ("Молоко", 150, U["ml"]),  # 50 в фарш + 100 в пюре
+            ("Молоко", 150, U["ml"]),
             ("Яйцо", 1, U["pcs"]),
             ("Соль", 1, U["pinch"]),
             ("Перец чёрный молотый", 1, U["pinch"]),
@@ -190,7 +178,6 @@ RECIPES = [
     {
         "name": "Лосось в медово-горчичном соусе с брокколи",
         "time": 25,
-        "tags": ["dinner"],
         "text": (
             "1) Смешайте мёд, горчицу, соевый соус и лимонный сок.\n"
             "2) Обмажьте лосося и запекайте при 200°C 12–14 мин.\n"
@@ -211,7 +198,6 @@ RECIPES = [
     {
         "name": "Тёплый салат с киноа и фетой",
         "time": 25,
-        "tags": ["lunch", "dinner"],
         "text": (
             "1) Промойте киноа и варите 12–15 мин.\n"
             "2) Быстро обжарьте сладкий перец 2–3 мин.\n"
@@ -234,7 +220,6 @@ RECIPES = [
     {
         "name": "Чили кон карне (простой)",
         "time": 35,
-        "tags": ["dinner"],
         "text": (
             "1) Обжарьте лук, добавьте говяжий фарш и доведите до румяности.\n"
             "2) Введите чеснок и специи.\n"
@@ -258,7 +243,6 @@ RECIPES = [
     {
         "name": "Борщ со сметаной",
         "time": 90,
-        "tags": ["lunch", "dinner"],
         "text": (
             "Классический борщ: говядина, свёкла, капуста, картофель, морковь, "
             "лук. Подача со сметаной и зеленью."
@@ -282,7 +266,7 @@ RECIPES = [
 
 
 class Command(BaseCommand):
-    help = "Загружает тестовые теги, ингредиенты и 10 рецептов."
+    help = "Загружает тестовые рецепты. Теги берутся из БД (случайные), новые теги не создаются."
 
     def add_arguments(self, parser):
         parser.add_argument(
@@ -307,15 +291,10 @@ class Command(BaseCommand):
                 self.stdout.write(self.style.WARNING(
                     f"Пользователь с email {email} не найден."
                 ))
-        author = User.objects.filter(
-            is_superuser=True).first() or User.objects.first()
+        author = User.objects.filter(is_superuser=True).first() or User.objects.first()
         if not author:
-            raise SystemExit(
-                "Не найдено ни одного пользователя. Создайте пользователя и повторите.")
+            raise SystemExit("Не найдено ни одного пользователя. Создайте пользователя и повторите.")
         return author
-
-    def _get_or_create_tag(self, name: str, slug: str) -> Tag:
-        return Tag.objects.get_or_create(name=name, slug=slug)[0]
 
     def _get_or_create_ingredient(self, name: str, unit: str) -> Ingredient:
         obj, _ = Ingredient.objects.get_or_create(
@@ -329,7 +308,7 @@ class Command(BaseCommand):
         author = self._resolve_author(options.get("user_email"))
         default_image_path = options.get("image")
 
-        # Получим байты изображения одной раз
+        # Байты изображения
         if default_image_path:
             try:
                 with open(default_image_path, "rb") as fh:
@@ -343,22 +322,23 @@ class Command(BaseCommand):
         else:
             raw_image_bytes = get_placeholder_bytes()
 
-        # Теги
-        tags_map: dict[str, Tag] = {}
-        for t in TAGS:
-            tag = self._get_or_create_tag(t["name"], t["slug"])
-            tags_map[t["slug"]] = tag
-        self.stdout.write(self.style.SUCCESS(
-            f"Теги готовы: {', '.join([t.name for t in tags_map.values()])}"
-        ))
+        # Теги из БД (без создания)
+        all_tags = list(Tag.objects.all())
+        if not all_tags:
+            self.stdout.write(self.style.WARNING(
+                "В БД нет тегов. Рецепты будут созданы без тегов."
+            ))
+        else:
+            self.stdout.write(self.style.SUCCESS(
+                f"Доступно тегов: {len(all_tags)}. Будут назначаться случайно 1–3 на рецепт."
+            ))
 
         created, skipped = 0, 0
 
         for item in RECIPES:
             if Recipe.objects.filter(name=item["name"]).exists():
                 skipped += 1
-                self.stdout.write(
-                    f'— пропуск: рецепт "{item["name"]}" уже существует')
+                self.stdout.write(f'— пропуск: рецепт "{item["name"]}" уже существует')
                 continue
 
             recipe = Recipe(
@@ -370,12 +350,13 @@ class Command(BaseCommand):
 
             # каждому рецепту — новый ContentFile из одних и тех же байтов
             image_name = f'{slugify(item["name"])}.png'
-            recipe.image.save(
-                image_name, ContentFile(raw_image_bytes), save=False)
+            recipe.image.save(image_name, ContentFile(raw_image_bytes), save=False)
             recipe.save()
 
-            # Теги
-            recipe.tags.set([tags_map[slug] for slug in item["tags"]])
+            # Случайные теги из существующих
+            if all_tags:
+                k = randint(1, min(3, len(all_tags)))
+                recipe.tags.set(sample(all_tags, k))
 
             # Ингредиенты и связи
             for name, amount, unit in item["components"]:
@@ -385,8 +366,7 @@ class Command(BaseCommand):
                 )
 
             created += 1
-            self.stdout.write(
-                self.style.SUCCESS(f'✓ создан рецепт: "{recipe.name}"'))
+            self.stdout.write(self.style.SUCCESS(f'✓ создан рецепт: "{recipe.name}"'))
 
         self.stdout.write(self.style.SUCCESS(
             f"Готово! Создано: {created}, пропущено (существовали): {skipped}."
