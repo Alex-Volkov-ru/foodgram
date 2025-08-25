@@ -1,4 +1,4 @@
-# recipes/management/commands/load_sample_recipes.py
+# flake8: noqa: F401
 # -*- coding: utf-8 -*-
 from typing import Optional
 import base64
@@ -307,9 +307,11 @@ class Command(BaseCommand):
                 self.stdout.write(self.style.WARNING(
                     f"Пользователь с email {email} не найден."
                 ))
-        author = User.objects.filter(is_superuser=True).first() or User.objects.first()
+        author = User.objects.filter(
+            is_superuser=True).first() or User.objects.first()
         if not author:
-            raise SystemExit("Не найдено ни одного пользователя. Создайте пользователя и повторите.")
+            raise SystemExit(
+                "Не найдено ни одного пользователя. Создайте пользователя и повторите.")
         return author
 
     def _get_or_create_tag(self, name: str, slug: str) -> Tag:
@@ -355,7 +357,8 @@ class Command(BaseCommand):
         for item in RECIPES:
             if Recipe.objects.filter(name=item["name"]).exists():
                 skipped += 1
-                self.stdout.write(f'— пропуск: рецепт "{item["name"]}" уже существует')
+                self.stdout.write(
+                    f'— пропуск: рецепт "{item["name"]}" уже существует')
                 continue
 
             recipe = Recipe(
@@ -367,7 +370,8 @@ class Command(BaseCommand):
 
             # каждому рецепту — новый ContentFile из одних и тех же байтов
             image_name = f'{slugify(item["name"])}.png'
-            recipe.image.save(image_name, ContentFile(raw_image_bytes), save=False)
+            recipe.image.save(
+                image_name, ContentFile(raw_image_bytes), save=False)
             recipe.save()
 
             # Теги
@@ -381,7 +385,8 @@ class Command(BaseCommand):
                 )
 
             created += 1
-            self.stdout.write(self.style.SUCCESS(f'✓ создан рецепт: "{recipe.name}"'))
+            self.stdout.write(
+                self.style.SUCCESS(f'✓ создан рецепт: "{recipe.name}"'))
 
         self.stdout.write(self.style.SUCCESS(
             f"Готово! Создано: {created}, пропущено (существовали): {skipped}."
