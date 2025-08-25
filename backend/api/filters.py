@@ -1,5 +1,6 @@
 from django.db.models import Q
 from django_filters import rest_framework as filters
+
 from rest_framework.filters import SearchFilter
 
 from recipes.models import Recipe, Tag
@@ -16,7 +17,6 @@ class IngredientNameFilter(SearchFilter):
         if not search_terms:
             return queryset
 
-        # накапливаем OR по началу строки (истартсвит)
         query = Q()
         for term in search_terms:
             query |= Q(name__istartswith=term)

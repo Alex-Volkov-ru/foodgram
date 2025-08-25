@@ -1,4 +1,3 @@
-# backend/api/views.py
 from django.conf import settings
 from django.db.models import Count, Sum
 from django.http import Http404, HttpResponse
@@ -18,7 +17,6 @@ from recipes.models import (
     RecipeIngredient, ShoppingCart, Tag
 )
 from users.models import Follow, User
-
 from .filters import CustomRecipeFilter, IngredientNameFilter
 from .pagination import CustomRecipePaginator
 from .permissions import ContentOwnerAccessControl
